@@ -1,18 +1,9 @@
 FROM bioconductor/bioconductor_docker:devel
 
-RUN mkdir /home/book
-COPY . /home/book
+WORKDIR /home/rstudio
 
-RUN apt-get update \
-  && apt-get install --no-install-recommends -y libglpk-dev \
-  && rm -rf /var/lib/apt/lists/*
+COPY --chown=rstudio:rstudio . /home/rstudio/
 
-RUN R --quiet -e "options(warn=2); BiocManager::install(setdiff(strsplit(read.dcf('/home/book/DESCRIPTION')[,'Imports'], ',\n')[[1]], 'rebook'))" \
-  && R --quiet -e "options(warn=2); BiocManager::install('bookdown')" \
-  && R --quiet -e "options(warn=2); BiocManager::install('LTLA/rebook')"
+RUN Rscript -e "options(repos = c(CRAN = 'https://cran.r-project.org')); BiocManager::install(ask=FALSE)"
 
-RUN mkdir /home/cache
-ENV EXPERIMENT_HUB_CACHE /home/cache/ExperimentHub
-ENV EXPERIMENT_HUB_ASK FALSE
-ENV ANNOTATION_HUB_CACHE /home/cache/AnnotationHub
-ENV XDG_CACHE_HOME /home/cache
+RUN Rscript -e "options(repos = c(CRAN = 'https://cran.r-project.org')); devtools::install('.', dependencies=TRUE, build_vignettes=TRUE, repos = BiocManager::repositories())"
